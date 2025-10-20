@@ -1,0 +1,7 @@
+numpy==0
+pandas==0
+torch==0
+tensorflow==0
+scipy==0
+opencv-python==0
+

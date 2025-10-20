@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: JD Desired Experience Validator - Lambda + Bedrock (SAM)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+      - arm64
+    Tracing: Active
+
+Parameters:
+  BedrockRegion:
+    Type: String
+    Default: us-east-1
+    Description: Bedrock region used by the validator tool
+  BedrockModelId:
+    Type: String
+    Default: anthropic.claude-3-5-sonnet-20240620-v1:0
+    Description: Bedrock model identifier
+  FunctionName:
+    Type: String
+    Default: jd-desired-experience-validator
+    Description: Lambda function name
+
+Resources:
+  JDDesiredExpValidatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      CodeUri: .
+      Handler: handler.handler
+      Environment:
+        Variables:
+          BEDROCK_REGION: !Ref BedrockRegion
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
+
+Outputs:
+  FunctionArn:
+    Description: Deployed Lambda ARN
+    Value: !GetAtt JDDesiredExpValidatorFunction.Arn
+
+

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+
+# Node/JS
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build & artifacts
+.aws-sam/
+.dist/
+.build/
+*.zip
+
+# Editor
+.vscode/
+.idea/
+
+# AgentCore StarterKit
+agent/**/.bedrock_agentcore/**
+agent/**/.dockerignore
+
+# Credentials & env
+.env
+.env.*

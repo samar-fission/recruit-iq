@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Resume Sparse Checker - Lambda + Bedrock (SAM)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+      - arm64
+    Tracing: Active
+
+Parameters:
+  BedrockRegion:
+    Type: String
+    Default: us-east-1
+  BedrockModelId:
+    Type: String
+    Default: anthropic.claude-3-5-sonnet-20240620-v1:0
+  FunctionName:
+    Type: String
+    Default: jd-resume-sparse-checker
+
+Resources:
+  ResumeSparseCheckerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      CodeUri: .
+      Handler: handler.handler
+      Environment:
+        Variables:
+          BEDROCK_REGION: !Ref BedrockRegion
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
+
+Outputs:
+  FunctionArn:
+    Value: !GetAtt ResumeSparseCheckerFunction.Arn
+
+

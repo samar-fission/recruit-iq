@@ -1,0 +1,41 @@
+default_agent: resume_process
+agents:
+  resume_process:
+    name: resume_process
+    entrypoint: /home/fl_lpt-464/Documents/agent/agent/resume_processor_agent/main.py
+    platform: linux/arm64
+    container_runtime: docker
+    source_path: /home/fl_lpt-464/Documents/agent/agent/resume_processor_agent
+    aws:
+      execution_role: arn:aws:iam::834406757853:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-cde20d1a17
+      execution_role_auto_create: false
+      account: '834406757853'
+      region: us-east-1
+      ecr_repository: 834406757853.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-resume_process
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: resume_process-BLU2i17X0m
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:834406757853:runtime/resume_process-BLU2i17X0m
+      agent_session_id: 976bd33f-0e9a-4bbb-98ff-bdc7006bee5a
+    codebuild:
+      project_name: bedrock-agentcore-resume_process-builder
+      execution_role: arn:aws:iam::834406757853:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-cde20d1a17
+      source_bucket: bedrock-agentcore-codebuild-sources-834406757853-us-east-1
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null

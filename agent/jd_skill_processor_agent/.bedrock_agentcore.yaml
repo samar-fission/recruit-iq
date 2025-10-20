@@ -1,0 +1,41 @@
+default_agent: jd_process
+agents:
+  jd_process:
+    name: jd_process
+    entrypoint: /home/fl_lpt-464/Documents/agent/agent/jd_skill_processor_agent/main.py
+    platform: linux/arm64
+    container_runtime: docker
+    source_path: /home/fl_lpt-464/Documents/agent/agent/jd_skill_processor_agent
+    aws:
+      execution_role: arn:aws:iam::834406757853:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-75787a0fdc
+      execution_role_auto_create: false
+      account: '834406757853'
+      region: us-east-1
+      ecr_repository: 834406757853.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-jd_process
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: jd_process-9x8vIt8rC6
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:834406757853:runtime/jd_process-9x8vIt8rC6
+      agent_session_id: 8ababd6e-1516-438d-ab36-2dfe41ba31c3
+    codebuild:
+      project_name: bedrock-agentcore-jd_process-builder
+      execution_role: arn:aws:iam::834406757853:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-75787a0fdc
+      source_bucket: bedrock-agentcore-codebuild-sources-834406757853-us-east-1
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
