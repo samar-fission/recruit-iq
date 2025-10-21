@@ -86,7 +86,7 @@ def main() -> None:
         print("\nInvoking JD agent via AgentCore runtime...")
         jd_payload = json.dumps({"jd_id": str(job_id)}).encode()
         jd_resp = ac_client.invoke_agent_runtime(
-            agentRuntimeArn=args.jd_agent_arn,
+            agentRuntimeArn="arn:aws:bedrock-agentcore:us-east-1:834406757853:runtime/jd_process-9x8vIt8rC6",
             runtimeSessionId=str(uuid.uuid4()),
             payload=jd_payload,
             qualifier="DEFAULT",

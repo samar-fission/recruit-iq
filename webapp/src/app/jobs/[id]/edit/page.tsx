@@ -18,12 +18,14 @@ export default function EditJobPage() {
   const { data } = useQuery({ queryKey: ["job", params.id], queryFn: () => fetchJob(params.id) });
   const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(formData: FormData) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
     const values = {
-      title: String(formData.get("title") || ""),
-      years_of_experience: Number(formData.get("years_of_experience") || 0),
-      seniority_level: String(formData.get("seniority_level") || ""),
-      jd_text: String(formData.get("jd_text") || ""),
+      title: String(fd.get("title") || ""),
+      years_of_experience: Number(fd.get("years_of_experience") || 0),
+      seniority_level: String(fd.get("seniority_level") || ""),
+      jd_text: String(fd.get("jd_text") || ""),
     };
     const parsed = jobEditableSchema.safeParse(values);
     if (!parsed.success) {
@@ -41,7 +43,7 @@ export default function EditJobPage() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Update failed");
       }
-      toast.success("Updated");
+      toast.success("Job updated and re-analyzed");
       router.push(`/jobs/${params.id}`);
     } catch (e: any) {
       toast.error(e.message);
@@ -59,7 +61,7 @@ export default function EditJobPage() {
           <span>Back to job</span>
         </Link>
       </div>
-      <form action={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4 relative">
         <div>
           <label className="block text-sm font-medium">Title</label>
           <input name="title" defaultValue={data?.title} className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400" disabled={submitting} />
@@ -83,8 +85,14 @@ export default function EditJobPage() {
           <textarea name="jd_text" rows={10} defaultValue={data?.jd_text} className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400" disabled={submitting} />
         </div>
         <button type="submit" disabled={submitting} className="px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-700 text-white transition-colors">
-          {submitting ? "Processing..." : "Save"}
+          {submitting ? "Updating job and re-running JD analysis…" : "Save Changes"}
         </button>
+        {submitting && (
+          <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center gap-2">
+            <span className="h-6 w-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+            <div className="text-sm text-neutral-700">Analyzing updated JD to refresh skills and responsibilities…</div>
+          </div>
+        )}
       </form>
     </div>
   );

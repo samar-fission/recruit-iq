@@ -23,8 +23,9 @@ export default function JobDetailPage() {
   const { data, isLoading, error } = useQuery({ queryKey: ["job", params.id], queryFn: () => fetchJob(params.id) });
   const candidatesQuery = useQuery({ queryKey: ["candidates", params.id], queryFn: () => fetchCandidates(params.id), enabled: Boolean(data) });
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"skills" | "education" | "responsibilities" | "candidates" | "details">("skills");
+  const [activeTab, setActiveTab] = useState<"skills" | "education" | "responsibilities" | "candidates" | "details">("candidates");
   const [updating, setUpdating] = useState(false);
+  const [newSkill, setNewSkill] = useState("");
 
   async function onDelete() {
     if (!confirm("Delete this job? This cannot be undone.")) return;
@@ -58,7 +59,6 @@ export default function JobDetailPage() {
     (s.skills_unclassified || []).forEach((sk: any, idx: number) => {
       out.push({ label: sk.skill, required: !!sk.required, context: sk.context, path: { type: "unclassified", idx } });
     });
-    // required first, then alpha
     out.sort((a, b) => (a.required === b.required ? a.label.localeCompare(b.label) : a.required ? -1 : 1));
     return out;
   }, [data]);
@@ -80,6 +80,70 @@ export default function JobDetailPage() {
     const res = await fetch(`/api/jobs/${params.id}/skills`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skills: next.skills }) });
     if (!res.ok) { toast.error("Update failed"); qc.invalidateQueries({ queryKey: ["job", params.id] }); }
     setUpdating(false);
+  }
+
+  async function removeSkill(path: any) {
+    if (!data) return;
+    setUpdating(true);
+    const next = JSON.parse(JSON.stringify(data));
+    try {
+      if (path.type === "vertical") {
+        next.skills.categories[path.catIdx].verticals[path.vIdx].skills.splice(path.skillIdx, 1);
+      } else if (path.type === "cat") {
+        next.skills.categories[path.catIdx].skills.splice(path.skillIdx, 1);
+      } else {
+        next.skills.skills_unclassified.splice(path.idx, 1);
+      }
+      qc.setQueryData(["job", params.id], next);
+      const res = await fetch(`/api/jobs/${params.id}/skills`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ remove_path: path }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Remove failed");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+      qc.invalidateQueries({ queryKey: ["job", params.id] });
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function addManualSkill() {
+    const skill = newSkill.trim();
+    if (!skill) return;
+    try {
+      setUpdating(true);
+      const res = await fetch(`/api/jobs/${params.id}/skills`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skills: data?.skills, add_skill: skill }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Add skill failed");
+      }
+      const updated = await res.json();
+      qc.setQueryData(["job", params.id], updated);
+      setNewSkill("");
+      toast.success("Skill added");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  function onAddCandidateClick() {
+    const count = flatSkills.length;
+    if (count < 4) {
+      toast.error("Please add at least 4 skills before adding a candidate.");
+      return;
+    }
+    router.push(`/jobs/${params.id}/candidates/new`);
   }
 
   return (
@@ -108,18 +172,31 @@ export default function JobDetailPage() {
           {activeTab === "skills" && (
             <section className="bg-white rounded-xl border border-purple-100 shadow-sm p-3">
               <h2 className="font-semibold mb-2">Skills</h2>
+              <div className="flex gap-2 mb-3">
+                <input value={newSkill} onChange={(e)=>setNewSkill(e.target.value)} placeholder="Add a skill (text)" className="flex-1 border rounded px-3 py-2 text-sm" disabled={updating} />
+                <button onClick={addManualSkill} disabled={updating || !newSkill.trim()} className="px-3 py-2 rounded bg-purple-600 disabled:opacity-50 text-white">Add</button>
+              </div>
               <div className="flex flex-wrap gap-2 text-sm">
                 {flatSkills.map((s, idx) => (
-                  <button
+                  <div
                     key={idx}
-                    onClick={() => toggleSkillRequired(s.path)}
-                    className={`px-2 py-1 rounded border ${s.required ? "bg-purple-600 text-white border-purple-600" : "border-neutral-200"}`}
+                    onClick={() => !updating && toggleSkillRequired(s.path)}
+                    className={`relative inline-flex items-center gap-2 px-2 py-1 rounded border cursor-pointer ${s.required ? "bg-purple-600 text-white border-purple-600" : "border-neutral-200"}`}
                     title={(s.required?"Required • ":"") + (s.context || "")}
-                    disabled={updating}
                   >
-                    {s.label}
-                    {updating && <span className="ml-2 inline-block h-3 w-3 border-2 border-white/70 border-t-transparent rounded-full align-middle animate-spin" />}
-                  </button>
+                    <span>{s.label}</span>
+                    <button
+                      type="button"
+                      aria-label="Remove skill"
+                      onClick={(e) => { e.stopPropagation(); removeSkill(s.path); }}
+                      disabled={updating}
+                      className={`ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs ${s.required ? "bg-white/20 hover:bg-white/30" : "bg-rose-50 hover:bg-rose-100 text-rose-700"}`}
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                    {updating && <span className="ml-2 inline-block h-3 w-3 border-2 border-current/70 border-t-transparent rounded-full align-middle animate-spin" />}
+                  </div>
                 ))}
               </div>
             </section>
@@ -128,7 +205,7 @@ export default function JobDetailPage() {
           {activeTab === "education" && (
             <section className="bg-white rounded-xl border border-purple-100 shadow-sm p-4">
               <h2 className="font-semibold mb-3">Education / Desired Experience</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md-grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-neutral-700">Desired Experience</div>
                   <div className="space-y-2">
@@ -169,7 +246,7 @@ export default function JobDetailPage() {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Candidates</h2>
-                <Link href={`/jobs/${params.id}/candidates/new`} className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors">Add Candidate</Link>
+                <button onClick={onAddCandidateClick} className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors">Add Candidate</button>
               </div>
               {candidatesQuery.isLoading && <div className="flex items-center gap-2 text-sm text-neutral-600"><span className="h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" /> Loading candidates...</div>}
               {candidatesQuery.error && (

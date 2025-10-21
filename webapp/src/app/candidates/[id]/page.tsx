@@ -13,7 +13,7 @@ async function fetchCandidate(id: string) {
 export default function CandidateDetailPage() {
   const params = useParams<{ id: string }>();
   const { data, isLoading, error } = useQuery({ queryKey: ["candidate", params.id], queryFn: () => fetchCandidate(params.id) });
-  const [tab, setTab] = useState<"summary" | "pi" | "skills" | "desired" | "education" | "resume">("summary");
+  const [tab, setTab] = useState<"summary" | "skills" | "desired" | "education" | "resume">("summary");
 
   const matchScoreRaw = typeof data?.resume_summary?.match_score === "number" ? data.resume_summary.match_score : undefined;
   const matchScore = typeof matchScoreRaw === "number" ? (matchScoreRaw <= 1 ? matchScoreRaw * 10 : matchScoreRaw) : undefined;
@@ -33,11 +33,14 @@ export default function CandidateDetailPage() {
   };
 
   const to10 = (val: any): number | undefined => {
-    if (typeof val !== "number") return undefined;
+    if (typeof val !== "number") {
+      const n = Number(val);
+      if (!Number.isNaN(n)) val = n; else return undefined;
+    }
     return val <= 1 ? val * 10 : val;
   };
 
-  // Full summary: no stripping
+  // Full summary
   const summaryText = (() => {
     const rs: any = data?.resume_summary;
     let raw = "";
@@ -47,6 +50,11 @@ export default function CandidateDetailPage() {
     const trimmed = (raw || "").trim();
     return trimmed.length ? trimmed : "—";
   })();
+
+  // Header display fields (no normalization)
+  const pi = data?.pi_details || {};
+  const rawPhone = pi.phone || pi.phone_number || pi.mobile || pi.contact;
+  const rawYoe = pi.years_of_experience || pi.experience_years || pi.yoe;
 
   return (
     <div className="p-4 max-w-5xl mx-auto space-y-4">
@@ -63,12 +71,14 @@ export default function CandidateDetailPage() {
       {error && <div className="text-red-600">{String((error as Error).message)}</div>}
       {data && (
         <div className="space-y-4">
-          {/* Header card - single line */}
+          {/* Header card with core PI info */}
           <div className="bg-white rounded-xl border border-purple-100 shadow-sm p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-lg font-semibold truncate">{data.pi_details?.name || "Unnamed"}</div>
-                <div className="text-sm text-neutral-600 truncate">{data.pi_details?.email || "No email"}</div>
+                <div className="text-lg font-semibold truncate">{display(pi.name) || "Unnamed"}</div>
+                <div className="text-sm text-neutral-600 truncate">{display(pi.email) || "No email"}</div>
+                {rawPhone && <div className="text-sm text-neutral-600 truncate">{String(rawPhone)}</div>}
+                {typeof rawYoe !== "undefined" && <div className="text-sm text-neutral-600 truncate">{String(rawYoe)} yrs</div>}
               </div>
               <div className="px-3 py-1.5 rounded-md border border-purple-200 text-purple-700 bg-purple-50 whitespace-nowrap">Match Score: {typeof matchScore === "number" ? `${matchScore.toFixed(1)} / 10` : "—"}</div>
             </div>
@@ -76,7 +86,7 @@ export default function CandidateDetailPage() {
 
           {/* Tabs */}
           <div className="bg-white rounded-full inline-flex border border-neutral-200 p-1">
-            {(["summary","pi","skills","desired","education","resume"] as const).map((t) => (
+            {(["summary","skills","desired","education","resume"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 text-sm rounded-full ${tab===t?"bg-purple-600 text-white":"text-neutral-700 hover:bg-neutral-50"}`}>{t === "desired" ? "Desired Experience" : t[0].toUpperCase()+t.slice(1)}</button>
             ))}
           </div>
@@ -88,80 +98,68 @@ export default function CandidateDetailPage() {
                 <div className="px-3 py-1.5 rounded-md border border-purple-200 text-purple-700 bg-purple-50 whitespace-nowrap">{typeof matchScore === "number" ? `${matchScore.toFixed(1)} / 10` : "—"}</div>
               </div>
               <div className="text-sm text-neutral-800 whitespace-pre-wrap">{summaryText}</div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                {(data.resume_summary?.strengths || []).map((s: any, i: number) => (
-                  <span key={i} className="px-2 py-0.5 rounded border border-green-300 bg-green-50">{display(s)}</span>
-                ))}
-                {(data.resume_summary?.gaps || []).map((g: any, i: number) => (
-                  <span key={i} className="px-2 py-0.5 rounded border border-amber-300 bg-amber-50">{display(g)}</span>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {tab === "pi" && (
-            <section className="bg-white rounded-xl border border-purple-100 shadow-sm p-4">
-              <h2 className="font-semibold mb-2">PI Details</h2>
-              <div className="text-sm space-y-1 text-neutral-800">
-                <div><span className="font-medium">Name:</span> {display(data.pi_details?.name)}</div>
-                <div><span className="font-medium">Email:</span> {display(data.pi_details?.email)}</div>
-              </div>
             </section>
           )}
 
           {tab === "skills" && (
             <section className="bg-white rounded-xl border border-purple-100 shadow-sm p-4">
-              <h2 className="font-semibold mb-3">Skills Evaluation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <h2 className="font-semibold mb-2">Skills Evaluation</h2>
+              <div className="space-y-2">
                 {(data.skills_eval?.skills || []).map((s: any, i: number) => {
                   const score10 = to10(s.score);
                   const pct = typeof score10 === "number" ? Math.max(0, Math.min(100, (score10 / 10) * 100)) : 0;
                   const good = pct > 50; // 5/10 should be red
                   return (
-                    <div key={i} className="p-3 rounded-lg border border-neutral-200 bg-white">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="font-medium text-neutral-800">{display(s.skill)}</span>
-                        <span className={`px-2 py-0.5 rounded border whitespace-nowrap ${good ? "bg-green-50 border-green-300 text-green-700" : "bg-rose-50 border-rose-300 text-rose-700"}`}>
+                    <div key={i} className="p-3 rounded-md border border-neutral-200 bg-white hover:bg-purple-50/30 transition-colors">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-2 min-w-0 text-neutral-800">
+                          <span className={`inline-block h-2 w-2 rounded-full ${good ? "bg-green-500" : "bg-rose-500"}`} />
+                          <span className="font-medium truncate">{display(s.skill)}</span>
+                        </div>
+                        <span className={`min-w-[78px] text-center px-2 py-0.5 rounded border tabular-nums ${good ? "bg-green-50 border-green-300 text-green-700" : "bg-rose-50 border-rose-300 text-rose-700"}`}>
                           {typeof score10 === "number" ? `${score10.toFixed(1)} / 10` : "—"}
                         </span>
                       </div>
-                      <div className="h-2 w-full rounded bg-neutral-100 overflow-hidden">
+                      {s.justification && (
+                        <div className="mt-1 text-xs text-neutral-600 whitespace-pre-wrap">{display(s.justification)}</div>
+                      )}
+                      <div className="mt-2 h-2 w-full rounded bg-neutral-100 overflow-hidden">
                         <div className={`h-full ${good ? "bg-green-300" : "bg-rose-300"}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
                 })}
-                {!data.skills_eval?.skills?.length && <div className="text-sm text-neutral-600">—</div>}
+                {!data.skills_eval?.skills?.length && <div className="text-sm text-neutral-600 py-2">—</div>}
               </div>
             </section>
           )}
 
           {tab === "desired" && (
             <section className="bg-white rounded-xl border border-purple-100 shadow-sm p-4">
-              <h2 className="font-semibold mb-3">Desired Experience</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <h2 className="font-semibold mb-2">Desired Experience</h2>
+              <div className="space-y-2">
                 {(data.desired_exp_eval?.experiences || []).map((e: any, i: number) => {
                   const score10 = to10(e.score);
                   const pct = typeof score10 === "number" ? Math.max(0, Math.min(100, (score10 / 10) * 100)) : 0;
                   const good = pct > 50; // 5/10 should be red
                   return (
-                    <div key={i} className="p-3 rounded-lg border border-neutral-200 bg-white">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-neutral-800 pr-2 truncate">{display(e.requirement ?? e)}</span>
-                        <span className={`px-2 py-0.5 rounded border whitespace-nowrap ${good ? "bg-green-50 border-green-300 text-green-700" : "bg-rose-50 border-rose-300 text-rose-700"}`}>
+                    <div key={i} className="p-3 rounded-md border border-neutral-200 bg-white hover:bg-purple-50/30 transition-colors">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-2 min-w-0 text-neutral-800">
+                          <span className={`inline-block h-2 w-2 rounded-full ${good ? "bg-green-500" : "bg-rose-500"}`} />
+                          <span className="truncate">{display(e.requirement ?? e)}</span>
+                        </div>
+                        <span className={`min-w-[78px] text-center px-2 py-0.5 rounded border tabular-nums ${good ? "bg-green-50 border-green-300 text-green-700" : "bg-rose-50 border-rose-300 text-rose-700"}`}>
                           {typeof score10 === "number" ? `${score10.toFixed(1)} / 10` : "—"}
                         </span>
                       </div>
-                      <div className="h-2 w-full rounded bg-neutral-100 overflow-hidden">
-                        <div className={`h-full ${good ? "bg-green-300" : "bg-rose-300"}`} style={{ width: `${pct}%` }} />
-                      </div>
                       {e.justification && (
-                        <div className="mt-2 text-xs text-neutral-600 whitespace-pre-wrap">{display(e.justification)}</div>
+                        <div className="mt-1 text-xs text-neutral-600 whitespace-pre-wrap">{display(e.justification)}</div>
                       )}
                     </div>
                   );
                 })}
-                {!data.desired_exp_eval?.experiences?.length && <div className="text-sm text-neutral-600">—</div>}
+                {!data.desired_exp_eval?.experiences?.length && <div className="text-sm text-neutral-600 py-2">—</div>}
               </div>
             </section>
           )}
@@ -169,24 +167,38 @@ export default function CandidateDetailPage() {
           {tab === "education" && (
             <section className="bg-white rounded-xl border border-purple-100 shadow-sm p-4">
               <h2 className="font-semibold mb-2">Education Evaluation</h2>
-              <div className="text-sm space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="font-medium">Matching</div>
-                  <ul className="list-disc ml-5">
+                  <div className="text-sm font-medium text-neutral-700 mb-2">Matching</div>
+                  <div className="space-y-2">
                     {(data.education_eval?.education_certification_matching || []).map((m: any, i: number) => (
-                      <li key={i}>{display(m)}</li>
+                      <div key={i} className="p-3 rounded-md border border-neutral-200 bg-white hover:bg-purple-50/30 transition-colors">
+                        <div className="flex items-center gap-2 text-sm text-neutral-800 min-w-0">
+                          <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                          <span className="truncate">{display(m)}</span>
+                        </div>
+                      </div>
                     ))}
-                    {!data.education_eval?.education_certification_matching?.length && <li className="text-neutral-600">—</li>}
-                  </ul>
+                    {!data.education_eval?.education_certification_matching?.length && (
+                      <div className="text-sm text-neutral-600 py-2">—</div>
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <div className="font-medium">Missing Requirements</div>
-                  <ul className="list-disc ml-5">
+                  <div className="text-sm font-medium text-neutral-700 mb-2">Missing Requirements</div>
+                  <div className="space-y-2">
                     {(data.education_eval?.gaps?.missing_requirements || []).map((g: any, i: number) => (
-                      <li key={i}>{display(g)}</li>
+                      <div key={i} className="p-3 rounded-md border border-neutral-200 bg-white hover:bg-purple-50/30 transition-colors">
+                        <div className="flex items-center gap-2 text-sm text-neutral-800 min-w-0">
+                          <span className="inline-block h-2 w-2 rounded-full bg-rose-500" />
+                          <span className="truncate">{display(g)}</span>
+                        </div>
+                      </div>
                     ))}
-                    {!data.education_eval?.gaps?.missing_requirements?.length && <li className="text-neutral-600">—</li>}
-                  </ul>
+                    {!data.education_eval?.gaps?.missing_requirements?.length && (
+                      <div className="text-sm text-neutral-600 py-2">—</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>

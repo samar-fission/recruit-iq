@@ -16,7 +16,7 @@ export default function JobsPage() {
   const qc = useQueryClient();
   const router = useRouter();
   const { data, isLoading, error } = useQuery({ queryKey: ["jobs"], queryFn: fetchJobs });
-  const [view, setView] = useState<"list" | "card">("list");
+  const [view, setView] = useState<"list" | "card">("card");
   async function onDelete(id: string) {
     if (!confirm("Delete this job? This cannot be undone.")) return;
     const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" });
@@ -30,8 +30,8 @@ export default function JobsPage() {
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h1 className="text-3xl font-semibold text-purple-700">Jobs</h1>
-        <div className="flex items-center gap-3">
+        <h1 className="sr-only">Jobs</h1>
+        <div className="flex items-center gap-3 sm:ml-auto">
           <div className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 p-1">
             <button
               onClick={() => setView("list")}

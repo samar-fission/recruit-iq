@@ -43,11 +43,13 @@ export async function updateCandidateEvaluations(
   const sets: string[] = [];
   let i = 0;
   for (const [k, v] of Object.entries(fields)) {
+    if (typeof v === "undefined") continue; // avoid undefined values which break ExpressionAttributeValues
     i++;
     names[`#k${i}`] = k;
     values[`:v${i}`] = v;
     sets.push(`#k${i} = :v${i}`);
   }
+  if (sets.length === 0) return; // nothing to update
   await ddb.send(
     new UpdateCommand({
       TableName: tables.candidates(),
