@@ -10,7 +10,7 @@ const EnvSchema = z.object({
   DYNAMO_TABLE_JOBS: z.string().default("jobs"),
   DYNAMO_TABLE_CANDIDATES: z.string().default("candidates"),
 
-  JWT_SECRET: z.string().min(5, "JWT_SECRET should be reasonably long"),
+  JWT_SECRET: z.string().min(5, "JWT_SECRET should be reasonably long").default("qwerty123"),
 
   // Bedrock AgentCore runtime ARNs (defaults provided)
   JD_AGENT_RUNTIME_ARN: z
