@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { getEnv } from "./env";
 
