@@ -30,10 +30,11 @@ export function verifyJwt(token: string): JwtPayload | null {
 
 export function setAuthCookie(token: string) {
   const store = cookies();
+  const secure = process.env.COOKIE_SECURE === "true"; // default false for HTTP deployments
   store.set("auth", token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure,
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });

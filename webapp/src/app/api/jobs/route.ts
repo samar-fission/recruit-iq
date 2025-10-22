@@ -4,6 +4,8 @@ import { jobEditableSchema } from "@/lib/jobSchemas";
 import { createJob, listJobs, updateJobDerived } from "@/lib/jobsRepo";
 import { callJdProcess } from "@/lib/agentcore";
 
+export const maxDuration = 60;
+
 export async function GET() {
   const items = await listJobs();
   return NextResponse.json({ items });

@@ -3,6 +3,8 @@ import { jobEditableSchema } from "@/lib/jobSchemas";
 import { callJdProcess } from "@/lib/agentcore";
 import { getJob, overwriteJobEditable, deleteJob } from "@/lib/jobsRepo";
 
+export const maxDuration = 60;
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const item = await getJob(params.id);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });

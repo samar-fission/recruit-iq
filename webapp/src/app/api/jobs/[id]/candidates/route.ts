@@ -4,6 +4,8 @@ import { candidateCreateSchema } from "@/lib/candidateSchemas";
 import { createCandidate, listCandidatesByJob, updateCandidateEvaluations } from "@/lib/candidatesRepo";
 import { callResumeProcess } from "@/lib/agentcore";
 
+export const maxDuration = 60;
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const items = await listCandidatesByJob(params.id);
   return NextResponse.json({ items });

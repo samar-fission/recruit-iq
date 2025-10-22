@@ -3,6 +3,8 @@ import { candidateUpdateSchema } from "@/lib/candidateSchemas";
 import { callResumeProcess } from "@/lib/agentcore";
 import { getCandidate, updateCandidateEvaluations } from "@/lib/candidatesRepo";
 
+export const maxDuration = 60;
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const item = await getCandidate(params.id);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
