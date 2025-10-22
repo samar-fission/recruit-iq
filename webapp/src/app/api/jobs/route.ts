@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { jobEditableSchema } from "@/lib/jobSchemas";
-import { createJob, listJobs, updateJobDerived } from "@/lib/jobsRepo";
+import { createJob, listJobs } from "@/lib/jobsRepo";
 import { callJdProcess } from "@/lib/agentcore";
 
 export const maxDuration = 60;
@@ -34,20 +34,13 @@ export async function POST(req: Request) {
     updated_at: now,
   });
 
-  // synchronous AgentCore call
-  const agent = await callJdProcess({
+  // Trigger JD processing; Agent updates derived fields itself
+  await callJdProcess({
     id,
     title: data.title,
     years_of_experience: data.years_of_experience,
     seniority_level: data.seniority_level,
     jd_text: data.jd_text,
-  });
-
-  await updateJobDerived(id, {
-    skills: agent.skills,
-    education_desired_experience: agent.education_desired_experience,
-    responsibilities: agent.responsibilities,
-    updated_at: new Date().toISOString(),
   });
 
   return NextResponse.json({ id }, { status: 201 });

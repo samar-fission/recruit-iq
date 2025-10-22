@@ -91,12 +91,7 @@ export default function JobsPage() {
                   <div className="text-lg font-semibold">{j.title}</div>
                   <div className="text-xs text-neutral-600 capitalize">{j.seniority_level} • {j.years_of_experience} yrs</div>
                 </div>
-                <div className="text-xs text-neutral-500">{new Date(j.created_at).toLocaleDateString()}</div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                {(j.skills?.skills_unclassified || []).slice(0, 4).map((s: any, i: number) => (
-                  <span key={i} className={`px-2 py-0.5 rounded border ${s.required ? "bg-purple-50 border-purple-300" : "border-neutral-200"}`}>{s.skill}</span>
-                ))}
+                <div className="text-xs text-neutral-500">{new Date(j.created_at).toLocaleString()}</div>
               </div>
               <div className="mt-4 flex items-center gap-3 text-sm" onClick={(e)=>e.stopPropagation()}>
                 <Link href={`/jobs/${j.id}`} className="text-purple-700 hover:underline">View</Link>

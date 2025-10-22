@@ -35,7 +35,7 @@ async function callJdAgentCore(jobId: string): Promise<JdProcessOutput> {
   const cmd = new InvokeAgentRuntimeCommand({
     agentRuntimeArn: env.JD_AGENT_RUNTIME_ARN,
     runtimeSessionId: nanoid(40),
-    qualifier: "v5",
+    qualifier: "DEFAULT",
     payload,
   });
   try {
