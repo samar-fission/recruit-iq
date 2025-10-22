@@ -7,9 +7,19 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.startsWith("/assets")) {
     return NextResponse.next();
   }
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
   const token = req.cookies.get("auth")?.value;
+
+  // For public pages, allow, but if already authenticated and visiting login/signup, redirect to /jobs
+  if (PUBLIC_PATHS.has(pathname)) {
+    if ((pathname === "/login" || pathname === "/signup") && token) {
+      const url = new URL("/jobs", req.url);
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  // Protected routes: require auth
   if (!token) {
     const url = new URL("/login", req.url);
     url.searchParams.set("next", pathname);

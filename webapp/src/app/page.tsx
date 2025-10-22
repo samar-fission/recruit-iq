@@ -1,7 +1,5 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <meta httpEquiv="refresh" content="0; url=/jobs" />
-  );
+  redirect("/jobs");
 }

@@ -8,18 +8,30 @@ export default function NavBar() {
   const pathname = usePathname();
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [loadingUser, setLoadingUser] = useState(true);
   const initials = (name || email)
     ? (name || email).split(" ")[0].slice(0, 2).toUpperCase()
     : "U";
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
 
-  useEffect(() => {
-    fetch("/api/auth/me").then(async (r) => {
+  async function fetchUser() {
+    try {
+      const r = await fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" });
       const j = await r.json().catch(() => ({}));
       setName(j?.user?.name || "");
       setEmail(j?.user?.email || "");
-    });
-  }, []);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingUser(false);
+    }
+  }
+
+  useEffect(() => {
+    setLoadingUser(true);
+    fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -69,7 +81,7 @@ export default function NavBar() {
               <div className="h-8 w-8 rounded-full bg-purple-600 text-white grid place-items-center text-sm font-semibold">
                 {initials}
               </div>
-              <span className="hidden sm:block text-sm text-neutral-800 max-w-[160px] truncate">{name || email || "User"}</span>
+              <span className="hidden sm:block text-sm text-neutral-800 max-w-[160px] truncate">{loadingUser ? "" : (name || email || "User")}</span>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-neutral-500"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.193l3.71-3.964a.75.75 0 111.08 1.04l-4.24 4.53a.75.75 0 01-1.08 0l-4.24-4.53a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
             </summary>
             <div className="absolute right-0 mt-2 w-48 bg-white border border-purple-100 rounded-lg shadow-md p-2 z-50">

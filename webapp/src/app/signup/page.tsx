@@ -26,7 +26,7 @@ export default function SignupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      if (!res.ok) {
+        if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Signup failed");
       }
@@ -39,11 +39,29 @@ export default function SignupPage() {
     }
   }
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    onSubmit(fd);
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-50 to-white">
-      <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-xl shadow p-6 border border-purple-100">
+      <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-xl shadow p-6 border border-purple-100 relative">
+        {submitting && (
+          <div className="absolute inset-0 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm rounded-xl grid place-items-center z-10">
+            <div className="flex items-center gap-2 text-purple-700">
+              <div className="h-5 w-5 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
+              <span>Creating account…</span>
+            </div>
+          </div>
+        )}
+        <div className="flex flex-col items-center gap-1 mb-4">
+          <div className="text-lg font-semibold text-purple-700">RecruitIQ</div>
+          <p className="text-xs text-neutral-600">Create your account to get started</p>
+        </div>
         <h1 className="text-2xl font-semibold mb-4 text-purple-700">Sign up</h1>
-        <form action={onSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium">Name</label>
             <input name="name" className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400" disabled={submitting} />
